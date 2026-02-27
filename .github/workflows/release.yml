@@ -115,8 +115,8 @@ jobs:
         with:
           flavor: latest=false
           images: |
-            traccar/traccar
-            ghcr.io/traccar/traccar
+            rommo911/traccar
+            ghcr.io/rommo911/traccar
           tags: |
             type=semver,pattern={{major}}.{{minor}}.{{patch}},suffix=-${{ matrix.os }},value=v${{ github.event.inputs.version }}
             type=semver,pattern={{major}}.{{minor}},suffix=-${{ matrix.os }},value=v${{ github.event.inputs.version }}
