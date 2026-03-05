@@ -68,7 +68,7 @@ jobs:
   release:
     name: Create release with installers
     needs: build
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.inputs.version != 'preview' }}
+    if: ${{ github.event.inputs.version != 'preview' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -83,7 +83,7 @@ jobs:
   docker:
     name: Build and push docker images
     needs: build
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.inputs.version != 'preview' }}
+    if: ${{ github.event.inputs.version != 'preview' }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
