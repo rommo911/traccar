@@ -7,6 +7,10 @@ on:
         description: Version
         required: true
         default: preview
+      branch:
+        description: Branch to build
+        required: true
+        default: master
 
 jobs:
   build:
@@ -15,6 +19,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.inputs.branch || github.ref }}
           fetch-depth: 0
           submodules: true
       - uses: actions/setup-java@v4
@@ -23,8 +28,12 @@ jobs:
           java-version: 21
           cache: gradle
       - run: ./gradlew build
-      - run: git checkout ${{ github.ref_name }}
-        working-directory: ./traccar-web
+      - name: Checkout submodules ref
+        run: |
+          git submodule update --init --recursive
+          cd traccar-web
+          git checkout ${{ github.event.inputs.branch || github.ref_name }} || echo "Branch not found in traccar-web, staying on default"
+        working-directory: .
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -70,7 +79,7 @@ jobs:
   release:
     name: Create release with installers
     needs: build
-    if: ${{ github.event.inputs.version != 'preview' }}
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.inputs.version != 'preview' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -85,7 +94,7 @@ jobs:
   docker:
     name: Build and push docker images
     needs: build
-    if: ${{ github.event.inputs.version != 'preview' }}
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.inputs.version != 'preview' }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -124,8 +133,10 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}.{{patch}},value=v${{ github.event.inputs.version }},enable=${{ matrix.os == 'alpine' }}
             type=semver,pattern={{major}}.{{minor}},value=v${{ github.event.inputs.version }},enable=${{ matrix.os == 'alpine' }}
             type=semver,pattern={{major}},value=v${{ github.event.inputs.version }},enable=${{ matrix.os == 'alpine' }}
-            type=raw,value=latest,enable=${{ matrix.os == 'alpine' }}
-            type=raw,value=${{ matrix.os }}
+            type=ref,event=branch,suffix=-${{ matrix.os }}
+            type=ref,event=branch,enable=${{ matrix.os == 'alpine' }}
+            type=raw,value=latest,enable=${{ matrix.os == 'alpine' && github.event.inputs.version != 'preview' }}
+            type=raw,value=${{ matrix.os }},enable=${{ github.event.inputs.version != 'preview' }}
           labels: |
             org.opencontainers.image.version=${{ github.event.inputs.version }}
       - uses: docker/build-push-action@v6
