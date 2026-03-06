@@ -108,6 +108,16 @@ public class ServerResource extends BaseResource {
         } else {
             server.setNewServer(UserUtil.isEmpty(storage));
         }
+
+        String apiUrl = config.getString("ui.apiServiceUrl", config.getString("web.apiServiceUrl"));
+        if (apiUrl != null) {
+            server.set("ui.apiServiceUrl", apiUrl);
+        }
+        String apiKey = config.getString("ui.apiServiceKey", config.getString("web.apiServiceKey"));
+        if (apiKey != null) {
+            server.set("ui.apiServiceKey", apiKey);
+        }
+
         return server;
     }
 
